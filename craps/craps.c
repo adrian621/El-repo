@@ -35,13 +35,19 @@ int main(int argc, char *argv[])
 	*/
 	/* TODO: initialize the communication with the players */
 	int fd[2];
-	int seedPipes[NUM_PLAYERS];
-	int scorePipes[NUM_PLAYERS];
+	int *seedPipes[NUM_PLAYERS];
+	int *scorePipes[NUM_PLAYERS];
 	for (i = 0; i < NUM_PLAYERS; i++) {
-	  pipe(fd);
 	  seedPipes[i] = fd;
-	  pipe(fd);
+	  if(pipe(seedPipes[i]) == -1){
+	    perror("perror");
+	    exit(-1);
+	  }
 	  scorePipes[i] = fd;
+	  if(pipe(scorePipes[i]) == -1){
+	    perror("perror");
+	    exit(-1);
+	  }
 	}
 	int status;
 	for (i = 0; i < NUM_PLAYERS; i++) {
@@ -51,7 +57,7 @@ int main(int argc, char *argv[])
 	  //printf("\nfork created\n");
 	  if(pid == 0){
 	    //printf("in fork child\n");
-	    shooter(i, 5, 5);	    
+	    shooter(i, seedPipes[i][0], scorePipes[i][1]);	    
 	    //int status = system(*args);
 	    //exit(0);	    	    
 	  }
@@ -60,27 +66,33 @@ int main(int argc, char *argv[])
 	    // printf("\nIn fork parent\n");
 	  }
 	  else {
-	    printf("\nError Generated: Fork failed");
+	    perror("perror");
+	    exit(-1);
 	  }
 	  
 	}
 	
 	seed = time(NULL);
-	for (i = 0; i < NUM_PLAYERS; i++) {
-	  pipe(&seed);
-	  seed++;
-	  int p[2];
-	  p = seedPipes[i];
-	  write((p[1]), &seed, sizeof(seed));
+	//close(seedPipes[0][1]);
+	for (i = 1; i < NUM_PLAYERS; i++) {
+	  seed++;	    
+	    close (seedPipes[i][0]);
+	    write((seedPipes[i][1]), &seed, sizeof(seed));
 		/* TODO: send the seed to the players */
-		//write(pid, seed, sizeof(seed));
-
-
+	  
 	}
 
 	/* TODO: get the dice results from the players, find the winner */
+	int win;
+	int tempscore = 0;
+	int score = 0;
 	for (i = 0; i < NUM_PLAYERS; i++) {
-
+	  close(scorePipes[i][1]);
+	  read(scorePipes[i][0], &tempscore, sizeof(tempscore));
+	  if(score < tempscore){
+	     score = tempscore;
+	     win = i;
+	  }
 	}
 	printf("master: player %d WINS\n", winner);
 
@@ -98,6 +110,5 @@ int main(int argc, char *argv[])
 	  
 	  wait(&status); 
 	}
-	//while(1);
 	return 0;
 }
