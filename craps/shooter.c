@@ -16,7 +16,7 @@
 
 int main(int argc, char *argv[])
 {
-	int id = 0;
+        int id = 0;
 	int seed_rd_fd = STDIN_FILENO;
 	int score_wr_fd = STDOUT_FILENO;
 

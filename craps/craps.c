@@ -7,7 +7,7 @@
  * Author: Nikos Nikoleris <nikos.nikoleris@it.uu.se>
  *
  */
-
+#include <string.h>
 #include <stdio.h> /* I/O functions: printf() ... */
 #include <stdlib.h> /* rand(), srand() */
 #include <unistd.h> /* read(), write() calls */
@@ -28,41 +28,48 @@ int main(int argc, char *argv[])
 	 * function sprintf and the arg1 variable you can pass the id parameter
 	 * to the children
 	 */
-	/*
+	
 	char arg0[] = "./shooter";
 	char arg1[10];
 	char *args[] = {arg0, arg1, NULL};
-	*/
+	
 	/* TODO: initialize the communication with the players */
-	int fd[2];
-	int *seedPipes[NUM_PLAYERS];
-	int *scorePipes[NUM_PLAYERS];
+	int seedPipes[NUM_PLAYERS][2];
+	int scorePipes[NUM_PLAYERS][2];
 	for (i = 0; i < NUM_PLAYERS; i++) {
-	  seedPipes[i] = fd;
 	  if(pipe(seedPipes[i]) == -1){
 	    perror("perror");
 	    exit(-1);
 	  }
-	  scorePipes[i] = fd;
 	  if(pipe(scorePipes[i]) == -1){
 	    perror("perror");
 	    exit(-1);
 	  }
 	}
 	int status;
+	pid_t pids[NUM_PLAYERS];
 	for (i = 0; i < NUM_PLAYERS; i++) {
-		/* TODO: spawsn the processes that simulate the players */
+		/* TODO: spawsn the processes that simulate the players */	  
 	  pid_t pid = fork();
 	  //fprintf("%s", "fork created");
 	  //printf("\nfork created\n");
 	  if(pid == 0){
 	    //printf("in fork child\n");
-	    shooter(i, seedPipes[i][0], scorePipes[i][1]);	    
-	    //int status = system(*args);
-	    //exit(0);	    	    
+	    close(seedPipes[i][1]);
+	    close(scorePipes[i][0]);
+	    // char sprintf_buffer[10];
+	    //sprintf(arg1, "%d", i);
+	    dup2(seedPipes[i][0], STDIN_FILENO);
+	    dup2(scorePipes[i][1], STDOUT_FILENO);
+	    sprintf(arg1, "%d", i);
+	    //arg1 = strdup(sprintf_buffer);
+	    if(execv(args[0],args) == -1){
+	    perror("execv");
+	    }
+	  //shooter(i, seedPipes[i][0], scorePipes[i][1]);	      	    	   
 	  }
 	  else if(pid > 0){
-	    
+	    pids[i] = pid;
 	    // printf("\nIn fork parent\n");
 	  }
 	  else {
@@ -73,8 +80,7 @@ int main(int argc, char *argv[])
 	}
 	
 	seed = time(NULL);
-	//close(seedPipes[0][1]);
-	for (i = 1; i < NUM_PLAYERS; i++) {
+	for (i = 0; i < NUM_PLAYERS; i++) {
 	  seed++;	    
 	    close (seedPipes[i][0]);
 	    write((seedPipes[i][1]), &seed, sizeof(seed));
@@ -94,21 +100,26 @@ int main(int argc, char *argv[])
 	     win = i;
 	  }
 	}
-	printf("master: player %d WINS\n", winner);
+	
+	printf("master: player %d WINS\n", win);
 
 	/* TODO: signal the winner */
-
+	//kill(pids[winner] , SIGUSR1);
+	kill(pids[win], SIGUSR1);
 	/* TODO: signal all players the end of game */
 	for (i = 0; i < NUM_PLAYERS; i++) {
-
+	  kill(pids[i], SIGUSR2);  
 	}
 
 	printf("master: the game ends\n");
 	
 	/* TODO: cleanup resources and exit with success */
 	for (i = 0; i < NUM_PLAYERS; i++) {
-	  
-	  wait(&status); 
+	  pid_t child_pid = wait(&status);
+	  //waitstat(pids[i], child_pid);
+
+	  //waitpid(-1, pids[i], 0);
+	  //	  wait(pids[i], 0);
 	}
 	return 0;
 }
