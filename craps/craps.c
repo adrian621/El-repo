@@ -82,8 +82,8 @@ int main(int argc, char *argv[])
 	seed = time(NULL);
 	for (i = 0; i < NUM_PLAYERS; i++) {
 	  seed++;	    
-	    close (seedPipes[i][0]);
-	    write((seedPipes[i][1]), &seed, sizeof(seed));
+	    close (seedPipes[i][0]);	    
+	      write((seedPipes[i][1]), &seed, sizeof(seed));
 		/* TODO: send the seed to the players */
 	  
 	}
