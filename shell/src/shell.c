@@ -218,26 +218,14 @@ void fork_child(enum cmd_pos pos, int left_pipe[], int right_pipe[], char *argv[
 
 
 void parent_close_pipes(enum cmd_pos pos, int left_pipe[], int right_pipe[]) {
-  
-  if(pos == middle){
+  close(left_pipe[0]);
+  close(right_pipe[1]);
+  if (pos == first){ 
     close(left_pipe[1]);
   }
-  
-  else  if(pos == first){
-    //close(right_pipe[0]);
-  }
-  
-  else if(pos == last){
-    close(left_pipe[1]);
+  if (pos == last) {
     close(right_pipe[0]);
-    close(right_pipe[1]);
   }
-  
-  /* else{
-    close(right_pipe[1]);
-    close(right_pipe[0]);
-    } */
-  
   
   // TODO 3: The parent must close un-used pipe descriptors. You need
   // to figure out wich descriptors that must be closes when.
@@ -251,20 +239,18 @@ void child_redirect_io(enum cmd_pos pos, int left_pipe[], int right_pipe[]) {
 
   if(pos == middle){
     dup2(left_pipe[0], STDIN_FILENO);
-    close(left_pipe[0]);
+    //close(left_pipe[0]);
     dup2(right_pipe[1], STDOUT_FILENO);
-    close(right_pipe[1]);
+    //close(right_pipe[1]);
     }
   else if(pos == first){
-    //dup2(STDIN_FILENO, right_pipe[0]);
     dup2(right_pipe[1], STDOUT_FILENO);
-    close(right_pipe[1]);
+    //close(right_pipe[1]);
 
   }
   else if(pos == last){    
     dup2(left_pipe[0], STDIN_FILENO);
-    close(left_pipe[0]);
-    //dup2(STDIN_FILENO, STDOUT_FILENO);
+    //close(left_pipe[0]);
 } 
 
   // TODO 4: A child may need to redirect STDIN to read from the left
