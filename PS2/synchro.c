@@ -7,7 +7,7 @@
  * Author: Nikos Nikoleris <nikos.nikoleris@it.uu.se>
  *
  */
-#include <stdatomic.h>
+
 
 
 #include <stdio.h>     /* printf(), fprintf() */
@@ -104,7 +104,7 @@ void *inc_atomic(void *arg __attribute__((unused)))
 
     /* TODO 3: Use atomic primitives to manipulate the shared variable */
     for (i = 0; i < INC_ITERATIONS; i++) {
-        atomic_fetch_add(&counter, INCREMENT);
+        __sync_fetch_and_add(&counter, INCREMENT);
         //counter += DECREMENT; // You need to replace this
     }
 
@@ -118,7 +118,7 @@ dec_atomic(void *arg __attribute__((unused)))
 
     /* TODO 3: Use atomic primitives to manipulate the shared variable */
     for (i = 0; i < DEC_ITERATIONS; i++) {
-        atomic_fetch_sub(&counter, DECREMENT);
+        __sync_fetch_and_sub(&counter, DECREMENT);
         //counter += DECREMENT; // You need to replace this
     }
 

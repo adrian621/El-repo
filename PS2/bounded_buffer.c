@@ -27,7 +27,8 @@ typedef struct {
     int next_in, next_out;
 } buffer_t;
 
-
+sem_t semEmpty, semFull, mutex;
+pthread_mutex_t lock;
 buffer_t buffer;
 
 pthread_t consumer_tid[CONSUMERS], producer_tid[PRODUCERS];
@@ -40,15 +41,28 @@ pthread_t consumer_tid[CONSUMERS], producer_tid[PRODUCERS];
 int
 insert_item(int item)
 {
+    int value;
+         
+     // if(value == BUFFER_SIZE){
+        sem_wait(&semEmpty);
+        sem_getvalue(&semFull, &value);
+        //sem_post(&semFull);
+        //    }
+    pthread_mutex_lock(&lock);
     /* TODO: Check and wait if the buffer is full. Ensure exclusive
      * access to the buffer and use the existing code to remove an item.
      */
-
-
+    //sem_wait(&mutex);
+    if(value != BUFFER_SIZE){
     buffer.value[buffer.next_in] = item;
     buffer.next_in = (buffer.next_in + 1) % BUFFER_SIZE;
-
-
+    }
+    pthread_mutex_unlock(&lock);
+  
+    sem_post(&semFull);
+    //sem_post(&mutex);
+    //sem_wait(&semEmpty);
+    
     return 0;
 }
 
@@ -60,15 +74,30 @@ insert_item(int item)
 int
 remove_item(int *item)
 {
+    
+    int value;
+    
+    //if(value == BUFFER_SIZE){
+        sem_wait(&semFull);
+        sem_getvalue(&semEmpty, &value);
+        //sem_post(&semEmpty);
+        //       }
+    pthread_mutex_lock(&lock);    
     /* TODO: Check and wait if the buffer is empty. Ensure exclusive
      * access to the buffer and use the existing code to remove an item.
      */
-
-
+    //sem_wait(&mutex);
+    if(value !=BUFFER_SIZE){
     *item = buffer.value[buffer.next_out];
     buffer.value[buffer.next_out] = -1;
-    buffer.next_out = (buffer.next_out + 1) % BUFFER_SIZE;
-
+    buffer.next_out = (buffer.next_out + 1) % BUFFER_SIZE;    
+    }
+    pthread_mutex_unlock(&lock);
+    
+    sem_post(&semEmpty);
+    //sem_post(&mutex);
+    //sem_wait(&semFull);
+    
     return 0;
 }
 
@@ -131,7 +160,10 @@ int
 main()
 {
     long int i;
-
+    pthread_mutex_init(&lock, NULL);
+    sem_init(&semEmpty, 0, BUFFER_SIZE);
+    sem_init(&semFull, 0, 0);
+    sem_init(&mutex, 0, 1);
     srand(time(NULL));
 
     /* Create the consumer threads */
